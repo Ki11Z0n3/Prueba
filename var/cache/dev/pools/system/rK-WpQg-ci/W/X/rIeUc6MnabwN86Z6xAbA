@@ -1,0 +1,3 @@
+<?php //Symfony%255CComponent%255CHttpKernel%255CController%255CContainerControllerResolver%2523throwExceptionIfControllerWasRemoved
+
+return [PHP_INT_MAX, []];
