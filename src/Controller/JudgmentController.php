@@ -27,6 +27,17 @@ class JudgmentController extends AbstractController
         return $this->render('formJudgment.html.twig');
     }
 
+    public function showResultTest(Request $request): Response
+    {
+        $plaintiff = array_change_key_case(str_split($request->request->get('plaintiff')), CASE_UPPER);
+        $defendant = array_change_key_case(str_split($request->request->get('defendant')), CASE_UPPER);
+        if (!$this->checkCharacter($plaintiff, $defendant)) {
+            return new response('Solo puede contener las letras K, N, V, #.');
+        }
+        $response = $this->calculatePoints($plaintiff, $defendant);
+        return new response($response);
+    }
+
     private function showResult(Request $request): Response
     {
         $plaintiff = array_change_key_case(str_split($request->request->get('plaintiff')), CASE_UPPER);
