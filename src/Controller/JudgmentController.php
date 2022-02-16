@@ -34,6 +34,8 @@ class JudgmentController extends AbstractController
         if (!$this->checkCharacter($plaintiff, $defendant)) {
             return $this->render('formJudgment.html.twig', ['message' => 'Solo puede contener las letras K, N, V, #.']);
         }
+        $response = $this->calculatePoints($plaintiff, $defendant);
+        return $this->render('formJudgment.html.twig', ['message' => $response]);
     }
 
     private function checkCharacter($plaintiff, $defendant): bool
@@ -45,5 +47,55 @@ class JudgmentController extends AbstractController
             }
         }
         return true;
+    }
+
+    private function calculatePoints($plaintiff, $defendant): string
+    {
+        $error = 0;
+        $message = '';
+
+        $this->deleteInArray($plaintiff, 'K', 'V');
+        $this->deleteInArray($defendant, 'K', 'V');
+
+        $plaintiffPoints = $this->replaceLetterByPoint($plaintiff);
+        $defendantPoints = $this->replaceLetterByPoint($defendant);
+
+        if (isset(array_count_values($plaintiff)['#']) && array_count_values($plaintiff)['#'] > 1) {
+            $message = 'Solo puede faltar una firma en una de las dos partes.';
+            $error++;
+        } elseif (isset(array_count_values($defendant)['#']) && array_count_values($defendant)['#'] > 1) {
+            $message = 'Solo puede faltar una firma en una de las dos partes.';
+            $error++;
+        } elseif (isset(array_count_values($plaintiff)['#']) && isset(array_count_values($defendant)['#'])) {
+            $message = 'Solo puede faltar una firma en una de las dos partes.';
+            $error++;
+        }
+
+        if ($error == 0) {
+            if (array_sum($plaintiffPoints) > array_sum($defendantPoints)) {
+                $message = 'Gana el Demandante';
+            } elseif (array_sum($defendantPoints) > array_sum($plaintiffPoints)) {
+                $message = 'Gana el Demandado';
+            } elseif (array_sum($defendantPoints) == array_sum($plaintiffPoints)) {
+                $message = 'Empate';
+            }
+        }
+
+        return $message;
+    }
+
+    private function deleteInArray(&$array, $search, $delete)
+    {
+        if (in_array($search, $array)) {
+            $array = array_values(array_diff($array, [$delete]));
+        }
+    }
+
+    private function replaceLetterByPoint($array): array
+    {
+        $points = $this->points;
+        return array_map(function ($value) use ($points) {
+            return $points[$value];
+        }, $array);
     }
 }
