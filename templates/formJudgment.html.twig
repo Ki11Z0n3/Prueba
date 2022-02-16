@@ -20,6 +20,12 @@
         </div>
         <input type="submit" class="btn btn-success" value="Comprobar resultado">
     </form>
+
+    {% if message is defined and message != '' %}
+        <div class="mt-5 alert alert-primary" role="alert">
+            {{ message }}
+        </div>
+    {% endif %}
 </div>
 
 </body>
