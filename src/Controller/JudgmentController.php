@@ -53,6 +53,8 @@ class JudgmentController extends AbstractController
     {
         $error = 0;
         $message = '';
+        $text = '';
+        $crumb = '';
 
         $this->deleteInArray($plaintiff, 'K', 'V');
         $this->deleteInArray($defendant, 'K', 'V');
@@ -72,12 +74,36 @@ class JudgmentController extends AbstractController
         }
 
         if ($error == 0) {
+            if (array_sum($plaintiffPoints) <= array_sum($defendantPoints) && isset(array_count_values($plaintiff)['#'])) {
+                $signature = $this->replaceCharacterByPoint($plaintiffPoints, $defendantPoints);
+                $crumb = 'plaintiff';
+                if ($signature == 'K') {
+                    $this->deleteInArray($plaintiffPoints, $this->points['V'], $this->points['V']);
+                }
+                $plaintiffPoints[array_search(0, $plaintiffPoints)] += $this->points[$signature];
+            } elseif (array_sum($defendantPoints) <= array_sum($plaintiffPoints) && isset(array_count_values($defendant)['#'])) {
+                $signature = $this->replaceCharacterByPoint($defendantPoints, $plaintiffPoints);
+                $crumb = 'defendant';
+                if ($signature == 'K') {
+                    $this->deleteInArray($defendantPoints, $this->points['V'], $this->points['V']);
+                }
+                $defendantPoints[array_search(0, $defendantPoints)] += $this->points[$signature];
+            }
+
+            if (isset($signature)) {
+                if ($crumb == 'plaintiff') {
+                    $text = 'Se ha retornado la firma ' . $signature . ' para el demandante. ';
+                } elseif ($crumb == 'defendant') {
+                    $text = 'Se ha retornado la firma ' . $signature . ' para el demandado. ';
+                }
+            }
+
             if (array_sum($plaintiffPoints) > array_sum($defendantPoints)) {
-                $message = 'Gana el Demandante';
+                $message = $text . 'Gana el Demandante';
             } elseif (array_sum($defendantPoints) > array_sum($plaintiffPoints)) {
-                $message = 'Gana el Demandado';
+                $message = $text . 'Gana el Demandado';
             } elseif (array_sum($defendantPoints) == array_sum($plaintiffPoints)) {
-                $message = 'Empate';
+                $message = $text . 'Empate';
             }
         }
 
@@ -97,5 +123,29 @@ class JudgmentController extends AbstractController
         return array_map(function ($value) use ($points) {
             return $points[$value];
         }, $array);
+    }
+
+    private function replaceCharacterByPoint($less, $higher): string
+    {
+        $crumb = '';
+        $lessPoints = array_sum($less);
+        $higherPoints = array_sum($higher);
+        while ($lessPoints <= $higherPoints) {
+            if ($crumb == '') {
+                $lessPoints += $this->points['V'];
+                $crumb = 'V';
+            } elseif ($crumb == 'V') {
+                $lessPoints -= $this->points['V'];
+                $lessPoints += $this->points['N'];
+                $crumb = 'N';
+            } elseif ($crumb == 'N') {
+                $lessPoints -= $this->points['N'];
+                $lessPoints += $this->points['K'];
+                $crumb = 'K';
+            } elseif ($crumb == 'K') {
+                break;
+            }
+        }
+        return $crumb;
     }
 }
